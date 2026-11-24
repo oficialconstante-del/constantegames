@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Show do Milhão de Pratas</title>
+<style>
+:root { --navy:#06133f; --blue:#102d7a; --gold:#ffd34e; --gold2:#c78b13; --white:#fff; }
+* { box-sizing:border-box; }
+body { margin:0; min-height:100vh; color:#fff; font-family:Arial,Helvetica,sans-serif; background:radial-gradient(ellipse at top,#214db3 0%,#0a1d59 42%,#030927 100%); display:flex; align-items:center; justify-content:center; padding:22px; }
+.game { width:min(900px,100%); }
+header { text-align:center; margin-bottom:18px; }
+.kicker { color:#ffe88a; letter-spacing:4px; font-weight:700; font-size:.85rem; }
+h1 { margin:8px 0; font-size:clamp(2rem,6vw,3.8rem); text-transform:uppercase; line-height:1; text-shadow:0 3px 0 #7c4c00,0 0 24px #ffc40080; }
+.tagline { color:#d9e5ff; margin-top:12px; }
+.panel { border:2px solid #dba928; border-radius:20px; background:linear-gradient(145deg,#102c75ed,#050e3beF); box-shadow:0 0 28px #0008,inset 0 0 18px #ffffff0c; padding:clamp(16px,4vw,30px); }
+.topline { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px; }
+.pill { border:1px solid #e5bd4b; border-radius:999px; padding:8px 13px; color:#ffe58a; font-size:.88rem; font-weight:700; }
+.money { color:var(--gold); font-weight:800; font-size:1.25rem; }
+.question { background:#071746; border:1px solid #6b8de0; border-radius:14px; padding:22px; font-size:clamp(1.1rem,3vw,1.5rem); line-height:1.45; text-align:center; min-height:110px; display:flex; align-items:center; justify-content:center; }
+.answers { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:18px; }
+.answer { display:flex; align-items:center; text-align:left; gap:12px; min-height:62px; border:1px solid #6583d1; border-radius:12px; background:#0b205e; color:#fff; padding:12px 15px; font-size:1rem; cursor:pointer; transition:.15s; }
+.answer:hover:not(:disabled) { border-color:var(--gold); background:#17357e; transform:translateY(-1px); }
+.answer.selected { border:2px solid var(--gold); background:#6b4c08; }
+.answer:disabled { cursor:default; }
+.letter { display:grid; place-items:center; flex:0 0 32px; height:32px; border-radius:50%; color:#ffe58a; border:1px solid #d7ad3a; font-weight:800; }
+.answer.selected .letter { background:var(--gold); color:#17204a; }
+.controls { display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:18px; }
+button.action { border:0; border-radius:999px; padding:13px 24px; font-size:1rem; font-weight:800; cursor:pointer; }
+.primary { color:#16204b; background:linear-gradient(#ffe985,#eab52d); box-shadow:0 3px 0 #976a0a; }
+.primary:disabled { opacity:.45; cursor:not-allowed; }
+.secondary { color:#fff; background:#203a83; border:1px solid #6d88d2 !important; }
+.feedback { display:none; text-align:center; padding:18px; margin-top:16px; border-radius:12px; line-height:1.5; }
+.feedback.show { display:block; }
+.feedback.good { background:#0d603e; border:1px solid #4fe0a1; }
+.feedback.bad { background:#70233a; border:1px solid #ff8da4; }
+.feedback.win { background:#70520b; border:1px solid var(--gold); }
+.progress-wrap { margin-top:18px; }
+.progress-label { display:flex; justify-content:space-between; color:#c9d7ff; font-size:.86rem; margin-bottom:7px; }
+.progress { height:9px; background:#020923; border-radius:99px; overflow:hidden; border:1px solid #314b93; }
+.progress span { display:block; height:100%; width:0; background:linear-gradient(90deg,#d99c16,#ffe56c); transition:width .25s; }
+.ladder { display:flex; justify-content:center; gap:5px; flex-wrap:wrap; margin-top:16px; }
+.ladder span { font-size:.75rem; color:#aebfe9; border:1px solid #344a8b; border-radius:7px; padding:5px 7px; }
+.ladder span.current { color:#111d4d; background:var(--gold); border-color:var(--gold); font-weight:800; }
+.ladder span.done { color:#ffe58a; border-color:#c89a28; }
+footer { text-align:center; color:#b9c9f6; font-size:.8rem; margin-top:15px; }
+@media(max-width:560px) { .answers { grid-template-columns:1fr; } .answer { min-height:54px; } body { padding:12px; } }
+</style>
+</head>
+<body>
+<main class="game">
+<header>
+<div class="kicker">O DESAFIO DA MATEMÁTICA</div>
+<h1>Show do Milhão</h1>
+<div class="tagline">Responda às 20 perguntas e leve <strong>1.000.000 de pratas!</strong></div>
+</header>
+<section class="panel" aria-live="polite">
+<div class="topline">
+<div class="pill" id="round">PERGUNTA 1 DE 20</div>
+<div class="money" id="prize">1.000 pratas</div>
+</div>
+<div class="question" id="question"></div>
+<div class="answers" id="answers"></div>
+<div class="controls">
+<button class="action primary" id="confirm" disabled>CONFIRMAR RESPOSTA</button>
+<button class="action secondary" id="restart" hidden>JOGAR NOVAMENTE</button>
+</div>
+<div class="feedback" id="feedback"></div>
+<div class="progress-wrap">
+<div class="progress-label"><span>Prêmio acumulado</span><strong id="earned">0 pratas</strong></div>
+<div class="progress"><span id="bar"></span></div>
+</div>
+<div class="ladder" id="ladder"></div>
+</section>
+<footer>Jogo educativo • Divisão simples • Boa sorte, milionário!</footer>
+</main>
+<script>
+const questions = [{"question": "Ana comprou 36 balas para distribuir igualmente entre 4 amigos. Quantas balas cada amigo receberá?", "options": ["6 balas", "8 balas", "9 balas", "10 balas", "12 balas", "14 balas"], "answer": 2}, {"question": "Uma papelaria recebeu 48 cadernos para organizar em 6 prateleiras. Quantos cadernos ficarão em cada prateleira?", "options": ["6 cadernos", "7 cadernos", "9 cadernos", "8 cadernos", "10 cadernos", "12 cadernos"], "answer": 3}, {"question": "Pedro economizou R$ 120,00 e decidiu dividir igualmente entre seus 5 filhos. Quanto cada filho receberá?", "options": ["R$ 20,00", "R$ 24,00", "R$ 25,00", "R$ 30,00", "R$ 15,00", "R$ 35,00"], "answer": 1}, {"question": "Uma escola possui 72 cadeiras para organizar igualmente em 8 salas. Quantas cadeiras ficarão em cada sala?", "options": ["7 cadeiras", "8 cadeiras", "10 cadeiras", "12 cadeiras", "6 cadeiras", "9 cadeiras"], "answer": 5}, {"question": "Um feirante colocou 54 laranjas em 6 caixas, com a mesma quantidade em cada caixa. Quantas laranjas ficaram em cada caixa?", "options": ["9 laranjas", "8 laranjas", "10 laranjas", "7 laranjas", "12 laranjas", "6 laranjas"], "answer": 0}, {"question": "Uma empresa comprou 84 garrafas de água para distribuir igualmente entre 7 setores. Quantas garrafas cada setor receberá?", "options": ["10 garrafas", "11 garrafas", "14 garrafas", "12 garrafas", "9 garrafas", "13 garrafas"], "answer": 3}, {"question": "Mariana comprou 96 chocolates para dividir igualmente entre 12 crianças. Quantos chocolates cada criança receberá?", "options": ["6 chocolates", "7 chocolates", "9 chocolates", "10 chocolates", "8 chocolates", "12 chocolates"], "answer": 4}, {"question": "Uma fábrica produziu 150 biscoitos para colocar igualmente em 10 pacotes. Quantos biscoitos ficarão em cada pacote?", "options": ["12 biscoitos", "15 biscoitos", "10 biscoitos", "20 biscoitos", "18 biscoitos", "25 biscoitos"], "answer": 1}, {"question": "Uma biblioteca recebeu 144 livros e decidiu distribuí-los igualmente entre 9 estantes. Quantos livros ficarão em cada estante?", "options": ["14 livros", "15 livros", "18 livros", "12 livros", "20 livros", "16 livros"], "answer": 5}, {"question": "Quatro amigos foram a uma lanchonete. A conta foi de R$ 88,00 e eles dividiram igualmente. Quanto cada um deverá pagar?", "options": ["R$ 18,00", "R$ 20,00", "R$ 22,00", "R$ 24,00", "R$ 16,00", "R$ 28,00"], "answer": 2}, {"question": "Uma professora possui 105 lápis para distribuir igualmente entre 15 alunos. Quantos lápis cada aluno receberá?", "options": ["5 lápis", "6 lápis", "8 lápis", "7 lápis", "9 lápis", "10 lápis"], "answer": 3}, {"question": "Lucas possui 132 figurinhas e quer dividir igualmente entre 11 amigos. Quantas figurinhas cada amigo receberá?", "options": ["10 figurinhas", "11 figurinhas", "13 figurinhas", "14 figurinhas", "12 figurinhas", "15 figurinhas"], "answer": 4}, {"question": "Uma granja colocou 180 ovos em 12 bandejas, com a mesma quantidade em cada uma. Quantos ovos ficaram em cada bandeja?", "options": ["12 ovos", "15 ovos", "18 ovos", "20 ovos", "10 ovos", "16 ovos"], "answer": 1}, {"question": "Uma confeitaria preparou 216 doces para distribuir igualmente em 18 caixas. Quantos doces ficarão em cada caixa?", "options": ["10 doces", "11 doces", "14 doces", "15 doces", "18 doces", "12 doces"], "answer": 5}, {"question": "Uma família ganhou R$ 360,00 em um sorteio e decidiu dividir igualmente entre 9 integrantes. Quanto cada integrante receberá?", "options": ["R$ 30,00", "R$ 35,00", "R$ 40,00", "R$ 45,00", "R$ 50,00", "R$ 60,00"], "answer": 2}, {"question": "Um supermercado recebeu 240 garrafas de refrigerante para organizar igualmente em 20 caixas. Quantas garrafas ficarão em cada caixa?", "options": ["10 garrafas", "11 garrafas", "14 garrafas", "12 garrafas", "15 garrafas", "16 garrafas"], "answer": 3}, {"question": "Uma escola comprou 288 borrachas para distribuir igualmente entre 24 turmas. Quantas borrachas cada turma receberá?", "options": ["10 borrachas", "11 borrachas", "14 borrachas", "15 borrachas", "12 borrachas", "16 borrachas"], "answer": 4}, {"question": "Uma padaria produziu 420 pães e deseja distribuí-los igualmente em 14 cestos. Quantos pães ficarão em cada cesto?", "options": ["25 pães", "30 pães", "35 pães", "28 pães", "20 pães", "40 pães"], "answer": 1}, {"question": "Uma instituição recebeu 360 brinquedos para distribuir igualmente entre 15 crianças. Quantos brinquedos cada criança receberá?", "options": ["20 brinquedos", "22 brinquedos", "25 brinquedos", "30 brinquedos", "18 brinquedos", "24 brinquedos"], "answer": 5}, {"question": "Uma editora precisa organizar 540 livros em 18 caixas, colocando a mesma quantidade em cada caixa. Quantos livros ficarão em cada caixa?", "options": ["25 livros", "28 livros", "30 livros", "32 livros", "35 livros", "40 livros"], "answer": 2}];
+const prizes = ["1.000","2.000","5.000","10.000","15.000","20.000","30.000","40.000","50.000","75.000","100.000","150.000","200.000","250.000","300.000","400.000","500.000","600.000","800.000","1.000.000"];
+const letters = ["A","B","C","D","E","F"];
+let index=0, selected=null, earned=0, finished=false;
+const el = id => document.getElementById(id);
+function render() {
+  const q=questions[index];
+  el("round").textContent=`PERGUNTA ${index+1} DE 20`;
+  el("prize").textContent=`${prizes[index]} pratas`;
+  el("question").textContent=q.question;
+  el("answers").innerHTML="";
+  q.options.forEach((option,i)=>{
+    const button=document.createElement("button");
+    button.className="answer"+(selected===i?" selected":"");
+    button.innerHTML=`<span class="letter">${letters[i]}</span><span></span>`;
+    button.querySelector("span:last-child").textContent=option;
+    button.disabled=finished;
+    button.addEventListener("click",()=>{selected=i;renderAnswers();});
+    el("answers").appendChild(button);
+  });
+  el("confirm").hidden=finished;
+  el("confirm").disabled=selected===null;
+  el("restart").hidden=!finished;
+  el("earned").textContent=earned?`${prizes[earned-1]} pratas`:"0 pratas";
+  el("bar").style.width=`${earned*5}%`;
+  el("ladder").innerHTML=prizes.map((p,i)=>`<span class="${i===index&&!finished?'current':i<earned?'done':''}">${p}</span>`).join("");
+}
+function renderAnswers() {
+  [...el("answers").children].forEach((button,i)=>{
+    button.classList.toggle("selected",i===selected);
+  });
+  el("confirm").disabled=selected===null;
+}
+el("confirm").addEventListener("click",()=>{
+  if(selected===null||finished)return;
+  const q=questions[index], fb=el("feedback");
+  fb.className="feedback show";
+  if(selected===q.answer) {
+    earned=index+1;
+    fb.classList.add(index===19?"win":"good");
+    fb.textContent=index===19?"🎉 É MILHÃO! Você acertou as 20 perguntas e conquistou 1.000.000 de pratas!":"✅ Resposta certa! Você acumulou "+prizes[index]+" pratas.";
+    if(index===19) {
+      finished=true;
+      el("confirm").hidden=true;
+      el("restart").hidden=false;
+      [...el("answers").children].forEach(b=>b.disabled=true);
+      render();
+    } else {
+      el("confirm").textContent="PRÓXIMA PERGUNTA";
+      el("confirm").disabled=false;
+      el("confirm").onclick=()=>{index++;selected=null;fb.className="feedback";el("confirm").textContent="CONFIRMAR RESPOSTA";el("confirm").onclick=null;render();};
+    }
+  } else {
+    finished=true;
+    fb.classList.add("bad");
+    fb.textContent="❌ Que pena! A resposta correta era "+letters[q.answer]+") "+q.options[q.answer]+". Você terminou com "+(earned?prizes[earned-1]:"0")+" pratas.";
+    el("confirm").hidden=true;
+    el("restart").hidden=false;
+    [...el("answers").children].forEach(b=>b.disabled=true);
+    render();
+  }
+});
+el("restart").addEventListener("click",()=>{index=0;selected=null;earned=0;finished=false;el("feedback").className="feedback";el("confirm").textContent="CONFIRMAR RESPOSTA";el("confirm").onclick=null;render();});
+render();
+</script>
+</body>
+</html>
